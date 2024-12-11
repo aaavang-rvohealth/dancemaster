@@ -921,7 +921,7 @@ const turnPartnerHalfway = async (danceMaster, direction) => {
 
         const timeline = anime.timeline({
             targets: dancer.targetId,
-            duration: 2 * BEATS,
+            duration: 1 * BEATS,
             easing: 'linear',
             autoplay: false,
             complete: () => {
@@ -947,7 +947,7 @@ const turnPartnerHalfway = async (danceMaster, direction) => {
 
         const newRotation = dancer.currentOffset.rotation += (direction === Directions.RIGHT ? 180 : -180)
         const arrowTimeline = anime.timeline({
-            duration: 4 * BEATS,
+            duration: 2 * BEATS,
             easing: 'linear',
             autoplay: false
         })
@@ -962,7 +962,7 @@ const turnPartnerHalfway = async (danceMaster, direction) => {
 
         timelines.push(arrowTimeline)
     }
-    const tickerTimeline = makeTickerTimeline(4);
+    const tickerTimeline = makeTickerTimeline(2);
     timelines.push(tickerTimeline)
 
     timelines.forEach(timeline => timeline.play())
