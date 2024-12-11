@@ -1499,35 +1499,7 @@ window.onload = () => {
         formation: Formations.EIGHT_HAND_SQUARE
     });
 
-    // danceMaster.addMove(Moves.advanceAndRetire)
-    // danceMaster.addMove(Moves.advanceAndRetire)
-    // danceMaster.addMove(Moves.quarterCircleRight)
-    // danceMaster.addMove(Moves.twoThreesToTheRight)
-    // danceMaster.addMove(Moves.quarterCircleLeft)
-    // danceMaster.addMove(Moves.twoThreesToTheLeft)
-    // danceMaster.addMove(Moves.advanceAndRetire)
-    // danceMaster.addMove(Moves.advanceAndRetire)
-    // danceMaster.addMove(Moves.quarterCircleLeft);
-    // danceMaster.addMove(Moves.twoThreesToTheLeft);
-    // danceMaster.addMove(Moves.quarterCircleRight)
-    // danceMaster.addMove(Moves.twoThreesToTheRightEndFacingPartner);
-    // danceMaster.addMove(Moves.sidestepRight);
-    // danceMaster.addMove(Moves.turnPartnerHalfwayByTheRight);
-    // danceMaster.addMove(Moves.turnPartnerHalfwayByTheLeft);
-    // danceMaster.addMove(Moves.sidestepLeft);
-    // danceMaster.addMove(Moves.turnPartnerHalfwayByTheLeft);
-    // danceMaster.addMove(Moves.turnPartnerHalfwayByTheRight);
-    // danceMaster.addMove(Moves.faceCenter);
-    // danceMaster.addMove(Moves.followsInnerQuarterCircleRight);
-    // danceMaster.addMove(Moves.followsTurnAround)
-    // danceMaster.addMove(Moves.followsInnerQuarterCircleRightEndHome);
-    // danceMaster.addMove(Moves.followsTurnAround)
-    // danceMaster.addMove(Moves.leadsInnerQuarterCircleLeft);
-    // danceMaster.addMove(Moves.leadsTurnAround)
-    // danceMaster.addMove(Moves.leadsInnerQuarterCircleLeftEndHome);
-    // danceMaster.addMove(Moves.leadsTurnAround)
-    // danceMaster.addMove(Moves.leadsInnerQuarterCircleRight);
-    // danceMaster.addMove(Moves.leadsInnerQuarterCircleRightEndHome);
+
     // danceMaster.addMove(Moves.facePartner)
     // danceMaster.addMove(Moves.swingPartner)
     // danceMaster.addMove(Moves.facePartner)
@@ -1546,4 +1518,42 @@ const resetDanceMaster = (formation) => {
     danceMaster = new DanceMaster({
         formation
     });
+}
+
+const bonfireDance = () => {
+    danceMaster.clear()
+    danceMaster = new DanceMaster({
+        formation: Formations.EIGHT_HAND_SQUARE
+    });
+    danceMaster.addMove(Moves.advanceAndRetire)
+    danceMaster.addMove(Moves.advanceAndRetire)
+    danceMaster.addMove(Moves.quarterCircleRight)
+    danceMaster.addMove(Moves.twoThreesToTheRight)
+    danceMaster.addMove(Moves.quarterCircleLeft)
+    danceMaster.addMove(Moves.twoThreesToTheLeft)
+    danceMaster.addMove(Moves.advanceAndRetire)
+    danceMaster.addMove(Moves.advanceAndRetire)
+    danceMaster.addMove(Moves.quarterCircleLeft);
+    danceMaster.addMove(Moves.twoThreesToTheLeft);
+    danceMaster.addMove(Moves.quarterCircleRight)
+    danceMaster.addMove(Moves.twoThreesToTheRightEndFacingPartner);
+    danceMaster.addMove(Moves.sidestepRight);
+    danceMaster.addMove(Moves.turnPartnerHalfwayByTheRight);
+    danceMaster.addMove(Moves.turnPartnerHalfwayByTheLeft);
+    danceMaster.addMove(Moves.sidestepLeft);
+    danceMaster.addMove(Moves.turnPartnerHalfwayByTheLeft);
+    danceMaster.addMove(Moves.turnPartnerHalfwayByTheRight);
+    danceMaster.addMove(Moves.faceCenter);
+    danceMaster.addMove(Moves.followsInnerQuarterCircleRight);
+    danceMaster.addMove(Moves.followsTurnAround)
+    danceMaster.addMove(Moves.followsInnerQuarterCircleRightEndHome);
+    danceMaster.addMove(Moves.followsTurnAround)
+    danceMaster.addMove(Moves.leadsInnerQuarterCircleLeft);
+    danceMaster.addMove(Moves.leadsTurnAround)
+    danceMaster.addMove(Moves.leadsInnerQuarterCircleLeftEndHome);
+    danceMaster.addMove(Moves.leadsTurnAround)
+    danceMaster.addMove(Moves.leadsInnerQuarterCircleRight);
+    danceMaster.addMove(Moves.leadsInnerQuarterCircleRightEndHome);
+
+    danceMaster.run();
 }
