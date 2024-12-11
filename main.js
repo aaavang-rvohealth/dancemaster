@@ -12,6 +12,11 @@ const updateHeader = (text) => {
     header.innerHTML = `${headerText} - ${(count % 8) + 1}`
 }
 
+const clearHeader = () => {
+    const header = document.getElementById('header')
+    header.innerHTML = ''
+}
+
 const tick = () => {
     count++;
     updateHeader();
@@ -24,9 +29,9 @@ const tick = () => {
 const Formations = {
     EIGHT_HAND_SQUARE: 'EIGHT_HAND_SQUARE',
     TWO_FACING_TWO: 'TWO_FACING_TWO',
-    THREE_FACING_THREE: 'THREE_FACING_THREE',
-    FOUR_FACING_FOUR: 'FOUR_FACING_FOUR',
-    CIRCLE: 'CIRCLE',
+    // THREE_FACING_THREE: 'THREE_FACING_THREE',
+    // FOUR_FACING_FOUR: 'FOUR_FACING_FOUR',
+    // CIRCLE: 'CIRCLE',
 }
 
 /**
@@ -198,7 +203,29 @@ const calcPositions = (width, height) => {
                 y: center.y + 25,
                 rotation: 270
             },
-        }
+        },
+        [Formations.TWO_FACING_TWO]: {
+            [Positions.FIRST_TOP_FOLLOW]: {
+                x: center.x - 125,
+                y: center.y - 150,
+                rotation: 0
+            },
+            [Positions.FIRST_TOP_LEAD]: {
+                x: center.x + 25,
+                y: center.y - 150,
+                rotation: 0
+            },
+            [Positions.SECOND_TOP_FOLLOW]: {
+                x: center.x + 25,
+                y: center.y + 50,
+                rotation: 180
+            },
+            [Positions.SECOND_TOP_LEAD]: {
+                x: center.x - 125,
+                y: center.y + 50,
+                rotation: 180
+            },
+        },
     }
 }
 
@@ -230,6 +257,7 @@ const fastSevensWithPartner = async (danceMaster) => {
     updateHeader('Fast Sevens')
     const timelines = [];
     switch (state.formation) {
+        case Formations.TWO_FACING_TWO:
         case Formations.EIGHT_HAND_SQUARE:
             // group dancers by group
             const groups = Object.values(state.dancers).reduce((acc, dancer) => {
@@ -312,6 +340,7 @@ const advanceAndRetire = async (danceMaster) => {
     updateHeader('Advance and Retire')
     const timelines = [];
     switch (state.formation) {
+        case Formations.TWO_FACING_TWO:
         case Formations.EIGHT_HAND_SQUARE:
             for (const dancer of Object.values(state.dancers)) {
                 const timeline = anime.timeline({
@@ -443,6 +472,7 @@ const facePartner = async (danceMaster, tick = false) => {
     const state = danceMaster.state
     const timelines = [];
     switch (state.formation) {
+        case Formations.TWO_FACING_TWO:
         case Formations.EIGHT_HAND_SQUARE:
             for (const dancer of Object.values(state.dancers)) {
 
@@ -896,7 +926,7 @@ const turnPartnerHalfway = async (danceMaster, direction) => {
 
     for (const dancer of Object.values(state.dancers)) {
 
-        const partnerPositionName = danceMaster.getPartnerPosition(dancer.currentNamedPosition)
+        const partnerPositionName = danceMaster.getPositionForRelationship(dancer.currentNamedPosition, Relationships.PARTNER)
         const currentPosition = positions[state.formation][dancer.currentNamedPosition]
         const partnerPosition = positions[state.formation][partnerPositionName]
         const currentOffsets = getCurrentOffset(state.formation, dancer)
@@ -970,12 +1000,11 @@ const turnPartnerHalfway = async (danceMaster, direction) => {
 }
 
 /**
- *
+ * Normalize an arrow's rotation to be between 0 and 360.
  * @param {HTMLDivElement} arrow
- * @returns {*}
+ * @returns {number} - the normalized rotation
  */
 const normalizeRotation = (arrow) => {
-    console.log(arrow.style.transform)
     const rotationStr = arrow.style.transform.match(/rotate\((.+)deg\)/)[1]
     let rotation = parseInt(rotationStr)
     rotation = rotation % 360
@@ -1218,6 +1247,8 @@ class DanceMaster {
         this.moves = [];
 
         this.danceFloor = window.document.getElementById('dance-floor')
+        this.movesButtons = window.document.getElementById('moves')
+        this.formationButtons = window.document.getElementById('formations')
 
         const headerElem = document.createElement('div')
         headerElem.id = 'header'
@@ -1229,16 +1260,34 @@ class DanceMaster {
         centerElem.style.left = `${positions.center.x - 5}px`
         centerElem.style.top = `${positions.center.y - 5}px`
 
+        switch (options.formation) {
+            case Formations.EIGHT_HAND_SQUARE:
+                this.createDancer('red', options.formation, Positions.FIRST_TOP_LEAD)
+                this.createDancer('blue', options.formation, Positions.FIRST_TOP_FOLLOW);
+                this.createDancer('green', options.formation, Positions.SECOND_TOP_LEAD);
+                this.createDancer('yellow', options.formation, Positions.SECOND_TOP_FOLLOW);
+                this.createDancer('purple', options.formation, Positions.FIRST_SIDE_LEAD);
+                this.createDancer('orange', options.formation, Positions.FIRST_SIDE_FOLLOW);
+                this.createDancer('pink', options.formation, Positions.SECOND_SIDE_LEAD);
+                this.createDancer('brown', options.formation, Positions.SECOND_SIDE_FOLLOW);
+                break;
+            case Formations.TWO_FACING_TWO:
+                this.createDancer('red', options.formation, Positions.FIRST_TOP_LEAD)
+                this.createDancer('blue', options.formation, Positions.FIRST_TOP_FOLLOW);
+                this.createDancer('green', options.formation, Positions.SECOND_TOP_LEAD);
+                this.createDancer('yellow', options.formation, Positions.SECOND_TOP_FOLLOW);
+                break;
+            default:
+                throw new Error("invalid formation")
+        }
 
-        if (options.formation === Formations.EIGHT_HAND_SQUARE) {
-            this.createDancer('red', options.formation, Positions.FIRST_TOP_LEAD)
-            this.createDancer('blue', options.formation, Positions.FIRST_TOP_FOLLOW);
-            this.createDancer('green', options.formation, Positions.SECOND_TOP_LEAD);
-            this.createDancer('yellow', options.formation, Positions.SECOND_TOP_FOLLOW);
-            this.createDancer('purple', options.formation, Positions.FIRST_SIDE_LEAD);
-            this.createDancer('orange', options.formation, Positions.FIRST_SIDE_FOLLOW);
-            this.createDancer('pink', options.formation, Positions.SECOND_SIDE_LEAD);
-            this.createDancer('brown', options.formation, Positions.SECOND_SIDE_FOLLOW);
+        for(const formation of Object.values(Formations)) {
+            const button = document.createElement('button')
+            button.innerHTML = formation
+            button.onclick = () => {
+                resetDanceMaster(formation)
+            }
+            this.formationButtons.appendChild(button)
         }
 
         // create buttons for each move
@@ -1248,7 +1297,7 @@ class DanceMaster {
             button.onclick = () => {
                 this.runMove(Moves[moveName])
             }
-            this.danceFloor.appendChild(button)
+            this.movesButtons.appendChild(button)
         }
     }
 
@@ -1266,7 +1315,14 @@ class DanceMaster {
      * @returns {Promise<void>}
      */
     async runMove(move) {
-        await move(this)
+        try {
+            await move(this)
+        } catch (e) {
+            updateHeader(e.message)
+            setTimeout(() => {
+                clearHeader()
+            }, 2000)
+        }
         this.normalizeDancerRotations();
     }
 
@@ -1284,6 +1340,14 @@ class DanceMaster {
             dancer.arrowElem.style.transform = `rotate(${normalizeRotation(dancer.arrowElem)}deg)`
             dancer.currentOffset.rotation = normalizedRotation
         }
+    }
+
+    clear() {
+        for(const dancer of Object.values(this.state.dancers)) {
+            dancer.elem.remove()
+        }
+        this.formationButtons.innerHTML = ''
+        this.movesButtons.innerHTML = ''
     }
 
     async reset() {
@@ -1322,9 +1386,9 @@ class DanceMaster {
         arrow.style.transform = `rotate(${positions[formation][role].rotation}deg)`
         dancerElem.appendChild(arrow)
         dancerElem.onclick = () => {
-            const partner = this.getPartnerPosition(role)
-            const corner = this.getCornerPosition(role)
-            const contrary = this.getContraryPosition(role)
+            const partner = this.getPositionForRelationship(role, Relationships.PARTNER)
+            const corner = this.getPositionForRelationship(role, Relationships.CORNER)
+            const contrary = this.getPositionForRelationship(role, Relationships.CONTRARY)
             const arrowRotation = arrow.style.transform
             const facingPartner = this.state.dancers[role].facingPartner
 
@@ -1381,52 +1445,58 @@ class DanceMaster {
         }
     }
 
-    getContraryPosition(role) {
+    /**
+     * Get the position for a specific relationship
+     * @param {Position} currentPosition
+     * @param {Relationship} targetRelationship
+     */
+    getPositionForRelationship(currentPosition, targetRelationship) {
+        const positionIndex = DancerLayouts[this.state.formation].indexOf(currentPosition)
+        const numberOfPositions = DancerLayouts[this.state.formation].length;
+        const isLead = positionIndex % 2 === 0
+        let nextIndex
         switch (this.state.formation) {
             case Formations.EIGHT_HAND_SQUARE:
-                const positionIndex = DancerLayouts[this.state.formation].indexOf(role)
-                const numberOfPositions = DancerLayouts[this.state.formation].length;
-                let nextIndex = (positionIndex % 2 === 0 ? positionIndex + 3 : positionIndex - 3) % numberOfPositions
-                nextIndex = (nextIndex % numberOfPositions + numberOfPositions) % numberOfPositions
-
-                return DancerLayouts[this.state.formation][nextIndex]
+                switch (targetRelationship) {
+                    case Relationships.PARTNER:
+                        nextIndex = isLead ? positionIndex + 1 : positionIndex - 1
+                        break;
+                    case Relationships.CORNER:
+                        nextIndex = isLead ? positionIndex - 1 : positionIndex + 1
+                        break;
+                    case Relationships.CONTRARY:
+                        nextIndex = isLead ? positionIndex - 3 : positionIndex + 3
+                        break;
+                    case Relationships.OPPOSITE:
+                        nextIndex = isLead ? positionIndex + 3 : positionIndex - 3
+                        break;
+                    default:
+                        throw new Error("invalid relationship")
+                }
+                break
+            case Formations.TWO_FACING_TWO:
+                switch (targetRelationship) {
+                    case Relationships.PARTNER:
+                        nextIndex = isLead ? positionIndex + 1 : positionIndex - 1
+                        break;
+                    case Relationships.OPPOSITE:
+                    case Relationships.CORNER:
+                        nextIndex = isLead ? positionIndex - 1 : positionIndex + 1
+                        break;
+                }
+                break
             default:
                 throw new Error("invalid formation")
         }
-    }
-
-    getPartnerPosition(role) {
-        switch (this.state.formation) {
-            case Formations.EIGHT_HAND_SQUARE:
-                const positionIndex = DancerLayouts[this.state.formation].indexOf(role)
-                const numberOfPositions = DancerLayouts[this.state.formation].length;
-                let nextIndex = (positionIndex % 2 === 0 ? positionIndex + 1 : positionIndex - 1) % numberOfPositions
-                nextIndex = (nextIndex % numberOfPositions + numberOfPositions) % numberOfPositions
-
-                return DancerLayouts[this.state.formation][nextIndex]
-            default:
-                throw new Error("invalid formation")
-        }
-    }
-
-    getCornerPosition(role) {
-        switch (this.state.formation) {
-            case Formations.EIGHT_HAND_SQUARE:
-                const positionIndex = DancerLayouts[this.state.formation].indexOf(role)
-                let nextIndex = (positionIndex % 2 === 0 ? positionIndex - 1 : positionIndex + 1) % DancerLayouts[this.state.formation].length
-                nextIndex = (nextIndex % DancerLayouts[this.state.formation].length + DancerLayouts[this.state.formation].length) % DancerLayouts[this.state.formation].length
-
-                return DancerLayouts[this.state.formation][nextIndex]
-            default:
-                throw new Error("invalid formation")
-        }
+        nextIndex = (nextIndex % numberOfPositions + numberOfPositions) % numberOfPositions
+        return DancerLayouts[this.state.formation][nextIndex]
     }
 }
 
 let danceMaster;
 window.onload = () => {
     danceMaster = new DanceMaster({
-        formation: Formations.EIGHT_HAND_SQUARE
+        formation: Formations.TWO_FACING_TWO
     });
 
     // danceMaster.addMove(Moves.advanceAndRetire)
@@ -1469,4 +1539,11 @@ window.onload = () => {
     danceMaster.addMove(Moves.quarterHouseLeft)
     danceMaster.addMove(Moves.quarterHouseLeft)
     danceMaster.addMove(Moves.quarterHouseLeft)
+}
+
+const resetDanceMaster = (formation) => {
+    danceMaster.clear()
+    danceMaster = new DanceMaster({
+        formation
+    });
 }

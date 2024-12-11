@@ -14,11 +14,33 @@
     position: relative;
 }
 
+#controls {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+#formations {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+#moves {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
 body {
     background-image: url("https://cdn.architextures.org/textures/20/11/ash-5fc4cb2f0d6d2-1200.jpg");
     background-size: 150px;
 }
-
 
 .arrow {
     margin-top: 5px;
