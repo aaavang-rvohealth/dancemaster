@@ -1496,7 +1496,7 @@ class DanceMaster {
 let danceMaster;
 window.onload = () => {
     danceMaster = new DanceMaster({
-        formation: Formations.TWO_FACING_TWO
+        formation: Formations.EIGHT_HAND_SQUARE
     });
 
     // danceMaster.addMove(Moves.advanceAndRetire)
@@ -1530,15 +1530,15 @@ window.onload = () => {
     // danceMaster.addMove(Moves.leadsInnerQuarterCircleRightEndHome);
     // danceMaster.addMove(Moves.facePartner)
     // danceMaster.addMove(Moves.swingPartner)
-    danceMaster.addMove(Moves.facePartner)
-    danceMaster.addMove(Moves.quarterHouseRight)
-    danceMaster.addMove(Moves.quarterHouseRight)
-    danceMaster.addMove(Moves.quarterHouseRight)
-    danceMaster.addMove(Moves.quarterHouseRight)
-    danceMaster.addMove(Moves.quarterHouseLeft)
-    danceMaster.addMove(Moves.quarterHouseLeft)
-    danceMaster.addMove(Moves.quarterHouseLeft)
-    danceMaster.addMove(Moves.quarterHouseLeft)
+    // danceMaster.addMove(Moves.facePartner)
+    // danceMaster.addMove(Moves.quarterHouseRight)
+    // danceMaster.addMove(Moves.quarterHouseRight)
+    // danceMaster.addMove(Moves.quarterHouseRight)
+    // danceMaster.addMove(Moves.quarterHouseRight)
+    // danceMaster.addMove(Moves.quarterHouseLeft)
+    // danceMaster.addMove(Moves.quarterHouseLeft)
+    // danceMaster.addMove(Moves.quarterHouseLeft)
+    // danceMaster.addMove(Moves.quarterHouseLeft)
 }
 
 const resetDanceMaster = (formation) => {

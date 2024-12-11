@@ -15,10 +15,23 @@
 }
 
 #controls {
+    position: absolute;
     display: flex;
     flex-direction: column;
     gap: 5px;
     margin-bottom: 10px;
+}
+
+.control-group-container {
+    display: flex;
+    flex-direction: row;
+    gap: 50px;
+}
+
+.control-group {
+    background: lightgray;
+    padding: 15px;
+    border: solid 1px;
 }
 
 #formations {

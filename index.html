@@ -9,8 +9,20 @@
 </head>
 <body>
 <div id="controls">
-    <div id="formations"></div>
-    <div id="moves"></div>
+    <div class="control-group-container">
+        <div class="control-group">
+            <pre>Formations</pre>
+            <div id="formations"></div>
+            <pre>Dances</pre>
+            <div id="dances">
+                <button id="bonfire" onclick="updateHeader('Coming Soon!'); setTimeout(clearHeader, 2000)">Bonfire</button>
+            </div>
+        </div>
+        <div class="control-group">
+            <pre>Moves</pre>
+            <div id="moves"></div>
+        </div>
+    </div>
 </div>
 <div id="dance-floor"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
