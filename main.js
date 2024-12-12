@@ -9,6 +9,7 @@ const updateHeader = (text) => {
         headerText = text
     }
     const header = document.getElementById('header')
+    console.log(header)
     header.innerHTML = `${headerText} - ${(count % 8) + 1}`
 }
 
@@ -476,8 +477,12 @@ const facePartner = async (danceMaster, tick = false) => {
         case Formations.EIGHT_HAND_SQUARE:
             for (const dancer of Object.values(state.dancers)) {
 
-                const partnerOnRight = DancerLayouts[state.formation].indexOf(dancer.currentNamedPosition) % 2
-                const rotation = dancer.currentOffset.rotation + (partnerOnRight ? -90 : 90)
+                const partnerPositionName = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.PARTNER)
+                const { rotation } = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, partnerPositionName, danceMaster.isLead(dancer.currentNamedPosition) ? Directions.RIGHT : Directions.LEFT)
+
+                if( (rotation === 360 || rotation === 0) && (dancer.currentOffset.rotation === 360 || dancer.currentOffset.rotation === 0)) {
+                    continue;
+                }
 
                 const arrowTimeline = anime.timeline({
                     duration: 2 * BEATS,
@@ -522,12 +527,13 @@ const faceCenter = async (danceMaster, tick = false) => {
     switch (state.formation) {
         case Formations.EIGHT_HAND_SQUARE:
             for (const dancer of Object.values(state.dancers)) {
-                if (!dancer.facingPartner) {
-                    continue;
-                }
 
-                const partnerOnRight = DancerLayouts[state.formation].indexOf(dancer.currentNamedPosition) % 2
-                const rotation = dancer.currentOffset.rotation + (partnerOnRight ? 90 : -90)
+                const oppositePositionName = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.OPPOSITE)
+                const { rotation } = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, oppositePositionName, danceMaster.isLead(dancer.currentNamedPosition) ? Directions.LEFT : Directions.RIGHT)
+
+                if( (rotation === 360 || rotation === 0) && (dancer.currentOffset.rotation === 360 || dancer.currentOffset.rotation === 0)) {
+                    continue
+                }
 
                 const arrowTimeline = anime.timeline({
                     duration: 2 * BEATS,
@@ -926,7 +932,7 @@ const turnPartnerHalfway = async (danceMaster, direction) => {
 
     for (const dancer of Object.values(state.dancers)) {
 
-        const partnerPositionName = danceMaster.getPositionForRelationship(dancer.currentNamedPosition, Relationships.PARTNER)
+        const partnerPositionName = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.PARTNER)
         const currentPosition = positions[state.formation][dancer.currentNamedPosition]
         const partnerPosition = positions[state.formation][partnerPositionName]
         const currentOffsets = getCurrentOffset(state.formation, dancer)
@@ -1250,10 +1256,6 @@ class DanceMaster {
         this.movesButtons = window.document.getElementById('moves')
         this.formationButtons = window.document.getElementById('formations')
 
-        const headerElem = document.createElement('div')
-        headerElem.id = 'header'
-        this.danceFloor.appendChild(headerElem)
-
         const centerElem = document.createElement('div')
         centerElem.id = 'center-point'
         this.danceFloor.appendChild(centerElem)
@@ -1386,9 +1388,9 @@ class DanceMaster {
         arrow.style.transform = `rotate(${positions[formation][role].rotation}deg)`
         dancerElem.appendChild(arrow)
         dancerElem.onclick = () => {
-            const partner = this.getPositionForRelationship(role, Relationships.PARTNER)
-            const corner = this.getPositionForRelationship(role, Relationships.CORNER)
-            const contrary = this.getPositionForRelationship(role, Relationships.CONTRARY)
+            const partner = this.getPositionNameFromRelationship(role, Relationships.PARTNER)
+            const corner = this.getPositionNameFromRelationship(role, Relationships.CORNER)
+            const contrary = this.getPositionNameFromRelationship(role, Relationships.CONTRARY)
             const arrowRotation = arrow.style.transform
             const facingPartner = this.state.dancers[role].facingPartner
 
@@ -1445,12 +1447,22 @@ class DanceMaster {
         }
     }
 
+    isLead(role) {
+        switch (this.state.formation) {
+            case Formations.TWO_FACING_TWO:
+            case Formations.EIGHT_HAND_SQUARE:
+                return DancerLayouts[this.state.formation].indexOf(role) % 2 === 0
+            default:
+                throw new Error("invalid formation")
+        }
+    }
+
     /**
      * Get the position for a specific relationship
      * @param {Position} currentPosition
      * @param {Relationship} targetRelationship
      */
-    getPositionForRelationship(currentPosition, targetRelationship) {
+    getPositionNameFromRelationship(currentPosition, targetRelationship) {
         const positionIndex = DancerLayouts[this.state.formation].indexOf(currentPosition)
         const numberOfPositions = DancerLayouts[this.state.formation].length;
         const isLead = positionIndex % 2 === 0
@@ -1468,7 +1480,7 @@ class DanceMaster {
                         nextIndex = isLead ? positionIndex - 3 : positionIndex + 3
                         break;
                     case Relationships.OPPOSITE:
-                        nextIndex = isLead ? positionIndex + 3 : positionIndex - 3
+                        nextIndex = isLead ? positionIndex - 3 : positionIndex + 3
                         break;
                     default:
                         throw new Error("invalid relationship")
