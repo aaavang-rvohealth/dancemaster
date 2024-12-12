@@ -9,7 +9,6 @@ const updateHeader = (text) => {
         headerText = text
     }
     const header = document.getElementById('header')
-    console.log(header)
     header.innerHTML = `${headerText} - ${(count % 8) + 1}`
 }
 
@@ -145,7 +144,9 @@ const Groups = {
  */
 const Directions = {
     RIGHT: 'RIGHT',
-    LEFT: 'LEFT'
+    LEFT: 'LEFT',
+    UP: 'UP',
+    DOWN: 'DOWN'
 }
 
 /**
@@ -466,9 +467,10 @@ function calculateRotationToFacePosition(state, startingPositionName, targetPosi
  * Helper move to face partner.  Can be done in conjunction with other moves, so you can disable ticks
  * @param danceMaster
  * @param tick
+ * @param overrideTurnDirection
  * @returns {Promise<Awaited<unknown>[]>}
  */
-const facePartner = async (danceMaster, tick = false) => {
+const facePartner = async (danceMaster, tick = false, overrideTurnDirection) => {
     updateHeader('Face Partner')
     const state = danceMaster.state
     const timelines = [];
@@ -478,8 +480,24 @@ const facePartner = async (danceMaster, tick = false) => {
             for (const dancer of Object.values(state.dancers)) {
 
                 const partnerPositionName = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.PARTNER)
-                const { rotation } = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, partnerPositionName, danceMaster.isLead(dancer.currentNamedPosition) ? Directions.RIGHT : Directions.LEFT)
+                const rotationRight = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, partnerPositionName, Directions.RIGHT)
+                const rotationLeft = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, partnerPositionName, Directions.LEFT)
 
+                const differenceRight = Math.abs(rotationRight.rotation - dancer.currentOffset.rotation) % 360
+                const differenceLeft = Math.abs(rotationLeft.rotation - dancer.currentOffset.rotation) % 360
+
+                let rotation
+                if(differenceLeft < differenceRight) {
+                    rotation = rotationLeft.rotation
+                } else {
+                    rotation = rotationRight.rotation
+                }
+
+                if(overrideTurnDirection === Directions.RIGHT) {
+                    rotation = rotationRight.rotation
+                } else if(overrideTurnDirection === Directions.LEFT) {
+                    rotation = rotationLeft.rotation
+                }
                 if( (rotation === 360 || rotation === 0) && (dancer.currentOffset.rotation === 360 || dancer.currentOffset.rotation === 0)) {
                     continue;
                 }
@@ -518,9 +536,10 @@ const facePartner = async (danceMaster, tick = false) => {
  * Helper move to face the center.  Can be done in conjunction with other moves, so you can disable ticks.
  * @param danceMaster
  * @param tick
+ * @param overrideTurnDirection
  * @returns {Promise<Awaited<unknown>[]>}
  */
-const faceCenter = async (danceMaster, tick = false) => {
+const faceCenter = async (danceMaster, tick = false, overrideTurnDirection) => {
     updateHeader('Face Center')
     const state = danceMaster.state
     const timelines = [];
@@ -529,7 +548,24 @@ const faceCenter = async (danceMaster, tick = false) => {
             for (const dancer of Object.values(state.dancers)) {
 
                 const oppositePositionName = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.OPPOSITE)
-                const { rotation } = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, oppositePositionName, danceMaster.isLead(dancer.currentNamedPosition) ? Directions.LEFT : Directions.RIGHT)
+                const rotationRight = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, oppositePositionName, Directions.RIGHT)
+                const rotationLeft = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, oppositePositionName, Directions.LEFT)
+
+                const differenceRight = Math.abs(rotationRight.rotation - dancer.currentOffset.rotation) % 360
+                const differenceLeft = Math.abs(rotationLeft.rotation - dancer.currentOffset.rotation) % 360
+
+                let rotation
+                if(differenceLeft < differenceRight) {
+                    rotation = rotationLeft.rotation
+                } else {
+                    rotation = rotationRight.rotation
+                }
+
+                if(overrideTurnDirection === Directions.RIGHT) {
+                    rotation = rotationRight.rotation
+                } else if(overrideTurnDirection === Directions.LEFT) {
+                    rotation = rotationLeft.rotation
+                }
 
                 if( (rotation === 360 || rotation === 0) && (dancer.currentOffset.rotation === 360 || dancer.currentOffset.rotation === 0)) {
                     continue
@@ -1454,6 +1490,19 @@ class DanceMaster {
                 return DancerLayouts[this.state.formation].indexOf(role) % 2 === 0
             default:
                 throw new Error("invalid formation")
+        }
+    }
+
+    getFacingDirection(dancer) {
+        const rotation = normalizeRotation(dancer.arrowElem);
+        if(rotation >= 46 && rotation < 135) {
+            return Directions.LEFT
+        } else if(rotation >= 135 && rotation < 225) {
+            return Directions.UP
+        } else if(rotation >= 225 && rotation < 315) {
+            return Directions.RIGHT
+        } else {
+            return Directions.DOWN
         }
     }
 
