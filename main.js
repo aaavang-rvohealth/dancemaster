@@ -274,12 +274,12 @@ const fastSevensWithPartner = async (danceMaster) => {
             Object.values(groups).forEach(group => {
                 const [dancer1, dancer2] = group
                 const dancer1Timeline = anime.timeline({
-                    duration: 1000,
+                    duration: 4 * BEATS,
                     easing: 'linear',
                     autoplay: false
                 })
                 const dancer2Timeline = anime.timeline({
-                    duration: 1000,
+                    duration: 4 * BEATS,
                     easing: 'linear',
                     autoplay: false
                 })
@@ -322,13 +322,15 @@ const fastSevensWithPartner = async (danceMaster) => {
                 timelines.push(dancer1Timeline)
                 timelines.push(dancer2Timeline)
 
-                timelines.forEach(timeline => timeline.play())
             })
             break;
         default:
             throw new Error("invalid formation")
     }
+    const tickerTimeline = makeTickerTimeline(8);
+    timelines.push(tickerTimeline)
 
+    timelines.forEach(timeline => timeline.play())
     return Promise.all(timelines.map(timeline => timeline.finished))
 }
 
