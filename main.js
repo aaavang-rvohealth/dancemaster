@@ -509,12 +509,6 @@ function calculateShortestTurnRotation(dancer, targetPositionName, state, overri
     const rotationRight = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, targetPositionName, Directions.RIGHT, dancer)
     const rotationLeft = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, targetPositionName, Directions.LEFT, dancer)
 
-    if(dancer.role === Positions.FIRST_TOP_LEAD) {
-        console.log('rotation', dancer.currentOffset.rotation)
-        console.log('rotationRight', rotationRight)
-        console.log('rotationLeft', rotationLeft)
-    }
-
     return findShortestRotation(rotationRight, dancer, rotationLeft, overrideTurnDirection);
 }
 
@@ -588,12 +582,6 @@ const faceCenter = async (danceMaster, tick = false, overrideTurnDirection) => {
             for (const dancer of Object.values(state.dancers)) {
                 const opposite = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.OPPOSITE)
                 const rotation = calculateShortestTurnRotation(dancer, opposite, state, overrideTurnDirection);
-                if(dancer.role === Positions.FIRST_TOP_LEAD) {
-                    console.log('pre-home rotation', dancer.currentOffset.rotation)
-                    console.log('arrow transform', dancer.arrowElem.style.transform)
-                    console.log('home rotation', rotation)
-                }
-
 
                 if( rotation % 360 === dancer.currentOffset.rotation % 360) {
                     // no rotation required, skip
@@ -1279,38 +1267,7 @@ const facePosition = (danceMaster, dancer, targetPositionName) => {
         return
     }
 
-    // get offsets from dancer's elem transform
-    const transform = getDancerTransformValues(dancer)
-
-    const currentOffset = {
-        x: transform.x,
-        y: transform.y
-    }
-
-    const currentPosition = {
-        x: parseInt(dancer.elem.style.left) + currentOffset.x,
-        y: parseInt(dancer.elem.style.top) + currentOffset.y,
-        rotation: dancer.currentOffset.rotation
-    }
-
-    const targetPosition = positions[danceMaster.state.formation][targetPositionName]
-
-    const rotationAndAngleRight = calculateRotationFromPositions(danceMaster.state, currentPosition, targetPosition, Directions.RIGHT)
-    const rotationAndAngleLeft = calculateRotationFromPositions(danceMaster.state, currentPosition, targetPosition, Directions.LEFT)
-    const shortestRotation = findShortestRotation({rotation: rotationAndAngleRight}, dancer, {rotation: rotationAndAngleLeft})
     const rotation = calculateShortestTurnRotation(dancer, targetPositionName, danceMaster.state)
-
-    if (dancer.role === Positions.FIRST_TOP_LEAD) {
-        console.log('transformX', transform.x)
-        console.log('transformY', transform.y)
-        console.log('currentOffset', currentOffset)
-        console.log('currentPosition', currentPosition)
-        console.log('targetPosition', targetPosition)
-        console.log('rotationAndAngleRight', rotationAndAngleRight)
-        console.log('rotationAndAngleLeft', rotationAndAngleLeft)
-        console.log('shortestRotation', shortestRotation)
-        console.log('rotation', rotation)
-    }
 
     const timeline = anime.timeline({
         targets: dancer.arrowId,
@@ -1390,6 +1347,7 @@ const randomizeDancerOffsets = (danceMaster) => {
     }
 }
 
+let minglingTimelinesPromise
 const mingle = async (danceMaster) => {
     mingling = true
     while(mingling) {
@@ -1435,7 +1393,8 @@ const mingle = async (danceMaster) => {
             timelines.push(timeline)
         }
         timelines.forEach(timeline => timeline.play())
-        await Promise.all(timelines.map(timeline => timeline.finished))
+        minglingTimelinesPromise = Promise.all(timelines.map(timeline => timeline.finished))
+        await minglingTimelinesPromise
     }
 }
 
@@ -1568,8 +1527,9 @@ class DanceMaster {
      */
     async runMove(move) {
         if(mingling && move !== Moves.mingle) {
-            console.log('Stop mingling')
             mingling = false
+            await minglingTimelinesPromise
+            await goHome(this)
         }
         try {
             await move(this)
