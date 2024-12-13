@@ -1675,7 +1675,7 @@ class DanceMaster {
         const arrow = document.createElement('div')
         arrow.classList.add('arrow')
         arrow.id = `arrow-${role}`
-        arrow.innerHTML = '⇩'
+        arrow.innerHTML = '↓'
         arrow.style.backgroundColor = color
         arrow.style.transform = `rotate(${positions[formation][role].rotation}deg)`
         dancerElem.appendChild(arrow)
