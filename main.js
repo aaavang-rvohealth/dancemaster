@@ -456,6 +456,11 @@ function calculateRotation(state, dancer, nextPositionName, direction) {
 function calculateRotationToFacePosition(state, startingPositionName, targetPositionName, direction) {
     const startingPosition = positions[state.formation][startingPositionName]
     const targetPosition = positions[state.formation][targetPositionName]
+
+    return calculateRotationFromPositions(state, startingPosition, targetPosition, direction)
+}
+
+function calculateRotationFromPositions(state, startingPosition, targetPosition, direction) {
     let angle = ((Math.atan2(targetPosition.y - startingPosition.y, targetPosition.x - startingPosition.x) * 180) / Math.PI) + 270;
     angle = angle % 360
     if (angle === 0 && direction === Directions.RIGHT) {
@@ -465,10 +470,7 @@ function calculateRotationToFacePosition(state, startingPositionName, targetPosi
     return angle
 }
 
-function calculateShortestTurnRotation(danceMaster, dancer, targetPositionName, state, overrideTurnDirection) {
-    const rotationRight = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, targetPositionName, Directions.RIGHT)
-    const rotationLeft = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, targetPositionName, Directions.LEFT)
-
+function findShortestRotation(rotationRight, dancer, rotationLeft, overrideTurnDirection) {
     const differenceRight = Math.abs(rotationRight.rotation - dancer.currentOffset.rotation) % 360
     const differenceLeft = Math.abs(rotationLeft.rotation - dancer.currentOffset.rotation) % 360
 
@@ -485,6 +487,13 @@ function calculateShortestTurnRotation(danceMaster, dancer, targetPositionName, 
         rotation = rotationLeft.rotation
     }
     return rotation;
+}
+
+function calculateShortestTurnRotation(dancer, targetPositionName, state, overrideTurnDirection) {
+    const rotationRight = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, targetPositionName, Directions.RIGHT)
+    const rotationLeft = calculateAngleAndRotation(state, dancer.currentOffset.rotation, dancer.currentNamedPosition, targetPositionName, Directions.LEFT)
+
+    return findShortestRotation(rotationRight, dancer, rotationLeft, overrideTurnDirection);
 }
 
 /**
@@ -504,7 +513,7 @@ const facePartner = async (danceMaster, tick = false, overrideTurnDirection) => 
             for (const dancer of Object.values(state.dancers)) {
 
                 const partnerPositionName = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.PARTNER)
-                const rotation = calculateShortestTurnRotation(danceMaster, dancer, partnerPositionName, state, overrideTurnDirection);
+                const rotation = calculateShortestTurnRotation(dancer, partnerPositionName, state, overrideTurnDirection);
                 if( rotation % 360 === dancer.currentOffset.rotation % 360) {
                     // no rotation needed
                     continue;
@@ -556,7 +565,7 @@ const faceCenter = async (danceMaster, tick = false, overrideTurnDirection) => {
         case Formations.EIGHT_HAND_SQUARE:
             for (const dancer of Object.values(state.dancers)) {
                 const opposite = danceMaster.getPositionNameFromRelationship(dancer.currentNamedPosition, Relationships.OPPOSITE)
-                const rotation = calculateShortestTurnRotation(danceMaster, dancer, opposite, state, overrideTurnDirection);
+                const rotation = calculateShortestTurnRotation(dancer, opposite, state, overrideTurnDirection);
 
                 if( rotation % 360 === dancer.currentOffset.rotation % 360) {
                     // no rotation required, skip
@@ -1226,11 +1235,127 @@ const quarterHouse = async (danceMaster, direction) => {
     return Promise.all(timelines.map(timeline => timeline.finished))
 }
 
+const facePosition = (danceMaster, dancer, targetPosition) => {
+    const currentOffset = {
+        x: dancer.currentOffset.x,
+        y: dancer.currentOffset.y
+    }
+
+    const targetOffset = {
+        x: 0,
+        y: 0
+    }
+    const rotationAndAngleRight = calculateRotationFromPositions(danceMaster.state, currentOffset, targetOffset, Directions.RIGHT)
+    const rotationAndAngleLeft = calculateRotationFromPositions(danceMaster.state, currentOffset, targetOffset, Directions.LEFT)
+    const rotation = dancer.currentOffset.rotation + findShortestRotation(rotationAndAngleRight, dancer, rotationAndAngleLeft)
+
+    if(dancer.role === Positions.FIRST_TOP_LEAD) {
+        console.log('offsets', dancer.currentOffset)
+        console.log('x', currentOffset.x)
+        console.log('y', currentOffset.y)
+        console.log('target x', targetOffset.x)
+        console.log('target y', targetOffset.y)
+        console.log('rotation', dancer.currentOffset.rotation)
+        console.log('rotation right', rotationAndAngleRight)
+        console.log('rotation left', rotationAndAngleLeft)
+        console.log('final rotation', rotation)
+    }
+
+    const timeline = anime.timeline({
+        targets: dancer.arrowId,
+        duration: 1 * BEATS,
+        easing: 'linear',
+        autoplay: false
+    })
+
+    timeline.add({
+        rotate: rotationAndAngleLeft,
+        complete: () => {
+            dancer.currentOffset.rotation = rotationAndAngleLeft
+        }
+    })
+
+    timeline.play()
+
+    return timeline.finished
+}
+
+const goToPosition = (danceMaster, dancer, targetPositionName) => {
+    const currentOffset = dancer.currentOffset
+    const homePosition = positions[danceMaster.state.formation][dancer.role]
+    const targetPosition = positions[danceMaster.state.formation][targetPositionName]
+
+    const diffX = targetPosition.x - homePosition.x
+    const diffY = targetPosition.y - homePosition.y
+
+    const translateX = diffX
+    const translateY = diffY
+
+    if (dancer.role === Positions.FIRST_TOP_LEAD) {
+        console.log('current offset', currentOffset)
+        console.log('target position', targetPosition)
+        console.log('diff x', diffX)
+        console.log('diff y', diffY)
+        console.log('translate x', translateX)
+        console.log('translate y', translateY)
+        console.log('transform', dancer.elem.style.transform)
+    }
+
+    const timeline = anime.timeline({
+        targets: dancer.targetId,
+        duration: 2 * BEATS,
+        easing: 'linear',
+        autoplay: false
+    })
+
+    timeline.add({
+        translateX: diffX,
+        translateY: diffY,
+        complete: () => {
+            dancer.currentOffset.x = translateX
+            dancer.currentOffset.y = translateY
+        }
+    })
+
+    timeline.play()
+
+    return timeline.finished
+}
+
+const goHome = async (danceMaster) => {
+    let timelines = []
+    for(const dancer of Object.values(danceMaster.state.dancers)) {
+        timelines.push(facePosition(danceMaster, dancer, dancer.role))
+    }
+    await Promise.all(timelines)
+    timelines = []
+
+    for(const dancer of Object.values(danceMaster.state.dancers)) {
+        timelines.push(goToPosition(danceMaster, dancer, dancer.role))
+    }
+    await Promise.all(timelines)
+    await faceCenter(danceMaster, false)
+}
+
+const randomizeDancerOffsets = (danceMaster) => {
+    for(const dancer of Object.values(danceMaster.state.dancers)) {
+        dancer.currentOffset = {
+            x: Math.random() * 200,
+            y: Math.random() * 200,
+            rotation: Math.random() * 360
+        }
+        dancer.elem.style.transform = `translateX(${dancer.currentOffset.x}px) translateY(${dancer.currentOffset.y}px)`
+        dancer.arrowElem.style.transform = `rotate(${dancer.currentOffset.rotation}deg)`
+    }
+}
+
 /**
  * Available moves
  * @type {(danceMaster: DanceMaster) => Promise<any>}
  */
 const Moves = {
+    randomizeDancerOffsets,
+    goHome,
     quarterHouseRight: (danceMaster) => quarterHouse(danceMaster, Directions.RIGHT),
     quarterHouseLeft: (danceMaster) => quarterHouse(danceMaster, Directions.LEFT),
     swingPartner,
@@ -1617,8 +1742,6 @@ const bonfireDance = () => {
     danceMaster.addMove(Moves.leadsTurnAround)
     danceMaster.addMove(Moves.leadsInnerQuarterCircleLeftEndHome);
     danceMaster.addMove(Moves.leadsTurnAround)
-    danceMaster.addMove(Moves.leadsInnerQuarterCircleRight)
-    danceMaster.addMove(Moves.leadsInnerQuarterCircleRightEndHome);
 
     danceMaster.run();
 }
