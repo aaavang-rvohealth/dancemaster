@@ -1428,6 +1428,12 @@ const Moves = {
     followsInnerQuarterCircleLeftEndHome: (danceMaster) => innerQuarterCircle(danceMaster, Directions.LEFT, false, true),
 }
 
+const generateRandomName = () => {
+    const names = ["Alex", "Davin", "Emmalee", "Justin", "Grace", "Danielle", "Sam", "Katie", "Paul", "Stephen", "Sharon", "Amy", "Ed", "Elaine", "Elvira", "Hailey", "Gaby", "Dawn", "Tim", "Liam", "Emma", "Noah", "Olivia", "Aiden", "Sophia", "Mason", "Isabella", "Lucas", "Mia", "Ethan", "Amelia", "James", "Harper", "Benjamin", "Evelyn", "Elijah", "Charlotte", "William", "Abigail", "Alexander", "Ella", "Henry", "Chloe", "Sebastian", "Madison", "Jackson", "Scarlett", "Mateo", "Aria", "Daniel", "Grace", "Matthew", "Zoe", "Joseph", "Riley", "David", "Lily", "Samuel", "Avery", "David", "Victoria", "John", "Camila", "Gabriel", "Penelope", "Carter", "Layla", "Owen", "Mila", "Wyatt", "Ellie", "Jack"]
+
+    return names[Math.floor(Math.random() * names.length)]
+}
+
 /**
  * DanceMaster class
  */
@@ -1574,6 +1580,7 @@ class DanceMaster {
     }
 
     createDancer(color, formation, role) {
+        const name = generateRandomName()
         const dancerElem = document.createElement('div')
         dancerElem.id = role
         dancerElem.classList.add("dancer")
@@ -1582,7 +1589,7 @@ class DanceMaster {
 
         const label = document.createElement('div')
         label.classList.add('label')
-        label.innerHTML = role
+        label.innerHTML = name
         dancerElem.appendChild(label)
 
         const arrow = document.createElement('div')
@@ -1603,6 +1610,7 @@ class DanceMaster {
         }
 
         this.state.dancers[role] = {
+            name,
             color,
             elem: dancerElem,
             role,
