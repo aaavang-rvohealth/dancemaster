@@ -158,7 +158,7 @@ const Directions = {
 const calcPositions = (width, height) => {
     const center = {
         x: width / 2,
-        y: height / 2
+        y: height / 2 + 100
     }
 
 
