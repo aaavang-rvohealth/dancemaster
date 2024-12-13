@@ -1337,14 +1337,65 @@ const randomizeDancerOffsets = (danceMaster) => {
     const max = 1
     for(const dancer of Object.values(danceMaster.state.dancers)) {
         dancer.currentOffset = {
-            x: (Math.random() * (max - min) + min) * 200,
-            y: (Math.random() * (max - min) + min) * 200,
+            x: (Math.random() * (max - min) + min) * 100,
+            y: (Math.random() * (max - min) + min) * 100,
             rotation: Math.random() * 360
         }
         dancer.currentNamedPosition = Positions.OUT_OF_POSITION
         dancer.elem.style.transform = `translateX(${dancer.currentOffset.x}px) translateY(${dancer.currentOffset.y}px)`
         dancer.arrowElem.style.transform = `rotate(${dancer.currentOffset.rotation}deg)`
     }
+}
+
+function isElementOutsideViewport(element) {
+    // Get the bounding rectangle of the element
+    const rect = element.getBoundingClientRect();
+
+    // Get the viewport dimensions (the visible area of the window)
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Get the computed style of the element
+    const computedStyle = window.getComputedStyle(element);
+
+    // Extract the transform property (we're interested in translateX and translateY)
+    const transform = computedStyle.transform;
+
+    // If no transform is applied, transform will be "none"
+    if (transform !== 'none') {
+        // Parse the matrix values (we're interested in the translation)
+        const matrix = new DOMMatrix(transform);
+
+        // Get the translateX and translateY from the matrix
+        const translateX = matrix.m41; // Translation in X (matrix.m41)
+        const translateY = matrix.m42; // Translation in Y (matrix.m42)
+
+        // Apply translation to the bounding box's coordinates
+        const transformedRect = {
+            top: rect.top + translateY,
+            left: rect.left + translateX,
+            right: rect.right + translateX,
+            bottom: rect.bottom + translateY
+        };
+
+        // Check if any part of the element is outside the bounds of the viewport
+        const isOutside = (
+            transformedRect.top < 200 ||                   // Element is above the viewport
+            transformedRect.left < 50 ||                  // Element is to the left of the viewport
+            transformedRect.bottom > viewportHeight - 50 ||   // Element is below the viewport
+            transformedRect.right > viewportWidth - 50       // Element is to the right of the viewport
+        );
+
+        return isOutside;
+    }
+
+    // If no transform is applied, just use the bounding rect
+    return (
+        rect.top < 200 ||                    // Element is above the viewport
+        rect.left < 50 ||                   // Element is to the left of the viewport
+        rect.bottom > viewportHeight - 50 ||    // Element is below the viewport
+        rect.right > viewportWidth - 50         // Element is to the right of the viewport
+    );
 }
 
 let minglingTimelinesPromise
@@ -1354,20 +1405,32 @@ const mingle = async (danceMaster) => {
         const timelines = []
         for(const dancer of Object.values(danceMaster.state.dancers)) {
             const currentOffsets = getDancerTransformValues(dancer)
+            const currentPosition = {
+                x: currentOffsets.x + positions[danceMaster.state.formation][dancer.role].x,
+                y: currentOffsets.y + positions[danceMaster.state.formation][dancer.role].y
+            }
             const currentAngle = dancer.currentOffset.rotation + 90
-            const newAngle = Math.random() * 360
-            const distance = Math.random() * 100
+            let newAngle = Math.random() * 360
+            let distance = Math.random() * 200
+
+            // if dancer went out of bounds, reverse they directions
+            if (currentPosition.x < 50) {
+                newAngle = 270
+                distance = 100
+            } else if (currentPosition.x > window.innerWidth - 50) {
+                newAngle = 90
+                distance = 100
+            } else if (currentPosition.y < 300) {
+                newAngle = 0
+                distance = 100
+            } else if (currentPosition.y > window.innerHeight - 100) {
+                newAngle = 180
+                distance = 100
+            }
 
             const nextPosition = {
                 x: currentOffsets.x + distance * Math.cos(currentAngle * (Math.PI / 180)),
                 y: currentOffsets.y + distance * Math.sin(currentAngle * (Math.PI / 180))
-            }
-
-            if (dancer.role === Positions.FIRST_TOP_LEAD) {
-                console.log('currentOffsets', currentOffsets)
-                console.log('currentAngle', currentAngle)
-                console.log('newAngle', newAngle)
-                console.log('nextPosition', nextPosition)
             }
 
             const timeline = anime.timeline({
@@ -1777,11 +1840,9 @@ const resetDanceMaster = (formation) => {
     });
 }
 
-const bonfireDance = () => {
-    danceMaster.clear()
-    danceMaster = new DanceMaster({
-        formation: Formations.EIGHT_HAND_SQUARE
-    });
+const bonfireDance = async () => {
+    mingling = false
+    resetDanceMaster(Formations.EIGHT_HAND_SQUARE)
     danceMaster.addMove(Moves.advanceAndRetire)
     danceMaster.addMove(Moves.advanceAndRetire)
     danceMaster.addMove(Moves.quarterCircleRight)
