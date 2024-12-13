@@ -231,7 +231,7 @@ const calcPositions = (width, height) => {
     }
 }
 
-const positions = calcPositions(window.innerWidth, window.innerHeight)
+let positions = calcPositions(window.innerWidth, window.innerHeight)
 
 /**
  * Get the offset of the dancer from their starting position
@@ -1380,6 +1380,18 @@ class DanceMaster {
         this.movesButtons.innerHTML = ''
     }
 
+    adjustPositions() {
+        for (const dancer of Object.values(this.state.dancers)) {
+            const position = positions[this.state.formation][dancer.role]
+            dancer.elem.style.left = `${position.x}px`
+            dancer.elem.style.top = `${position.y}px`
+        }
+
+        const centerElem = document.getElementById('center-point')
+        centerElem.style.left = `${positions.center.x - 5}px`
+        centerElem.style.top = `${positions.center.y - 5}px`
+    }
+
     async reset() {
         for (const dancer of Object.values(this.state.dancers)) {
             dancer.elem.style.left = `${positions[this.state.formation][dancer.role].x}px`
@@ -1610,3 +1622,8 @@ const bonfireDance = () => {
 
     danceMaster.run();
 }
+
+window.addEventListener('resize', function() {
+    positions = calcPositions(window.innerWidth, window.innerHeight)
+    danceMaster.adjustPositions()
+});
