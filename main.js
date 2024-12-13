@@ -1378,9 +1378,9 @@ const randomizeDancerOffsets = (danceMaster) => {
     const max = 1
     for(const dancer of Object.values(danceMaster.state.dancers)) {
         dancer.currentOffset = {
-            x: 100, //(Math.random() * (max - min) + min) * 200,
-            y: 100, //(Math.random() * (max - min) + min) * 200,
-            rotation: 45
+            x: (Math.random() * (max - min) + min) * 200,
+            y: (Math.random() * (max - min) + min) * 200,
+            rotation: Math.random() * 360
         }
         dancer.currentNamedPosition = Positions.OUT_OF_POSITION
         dancer.elem.style.transform = `translateX(${dancer.currentOffset.x}px) translateY(${dancer.currentOffset.y}px)`
@@ -1737,6 +1737,7 @@ window.onload = () => {
         formation: Formations.EIGHT_HAND_SQUARE
     });
 
+    danceMaster.runMove(Moves.randomizeDancerOffsets)
 
     // danceMaster.addMove(Moves.facePartner)
     // danceMaster.addMove(Moves.swingPartner)
