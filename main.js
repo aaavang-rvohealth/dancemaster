@@ -1356,10 +1356,11 @@ const mingle = async (danceMaster) => {
             const currentOffsets = getDancerTransformValues(dancer)
             const currentAngle = dancer.currentOffset.rotation + 90
             const newAngle = Math.random() * 360
+            const distance = Math.random() * 100
 
             const nextPosition = {
-                x: currentOffsets.x + 50 * Math.cos(currentAngle * (Math.PI / 180)),
-                y: currentOffsets.y + 50 * Math.sin(currentAngle * (Math.PI / 180))
+                x: currentOffsets.x + distance * Math.cos(currentAngle * (Math.PI / 180)),
+                y: currentOffsets.y + distance * Math.sin(currentAngle * (Math.PI / 180))
             }
 
             if (dancer.role === Positions.FIRST_TOP_LEAD) {
