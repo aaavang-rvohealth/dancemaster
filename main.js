@@ -4,6 +4,8 @@ let count = 0
 let headerText
 let freezeHeader = false
 
+let mingling = false
+
 const updateHeader = (text) => {
     if (text && !freezeHeader) {
         headerText = text
@@ -1388,11 +1390,61 @@ const randomizeDancerOffsets = (danceMaster) => {
     }
 }
 
+const mingle = async (danceMaster) => {
+    mingling = true
+    while(mingling) {
+        const timelines = []
+        for(const dancer of Object.values(danceMaster.state.dancers)) {
+            const currentOffsets = getDancerTransformValues(dancer)
+            const currentAngle = dancer.currentOffset.rotation + 90
+            const newAngle = Math.random() * 360
+
+            const nextPosition = {
+                x: currentOffsets.x + 50 * Math.cos(currentAngle * (Math.PI / 180)),
+                y: currentOffsets.y + 50 * Math.sin(currentAngle * (Math.PI / 180))
+            }
+
+            if (dancer.role === Positions.FIRST_TOP_LEAD) {
+                console.log('currentOffsets', currentOffsets)
+                console.log('currentAngle', currentAngle)
+                console.log('newAngle', newAngle)
+                console.log('nextPosition', nextPosition)
+            }
+
+            const timeline = anime.timeline({
+                duration: 4 * BEATS,
+                easing: 'linear',
+                autoplay: false
+            })
+
+            timeline.add({
+                targets: dancer.targetId,
+                translateX: nextPosition.x,
+                translateY: nextPosition.y,
+                complete: () => {
+                    dancer.currentOffset.x = nextPosition.x
+                    dancer.currentOffset.y = nextPosition.y
+                }
+            }).add({
+                targets: dancer.arrowId,
+                rotate: newAngle,
+                complete: () => {
+                    dancer.currentOffset.rotation = newAngle
+                }
+            })
+            timelines.push(timeline)
+        }
+        timelines.forEach(timeline => timeline.play())
+        await Promise.all(timelines.map(timeline => timeline.finished))
+    }
+}
+
 /**
  * Available moves
  * @type {(danceMaster: DanceMaster) => Promise<any>}
  */
 const Moves = {
+    mingle,
     randomizeDancerOffsets,
     goHome,
     quarterHouseRight: (danceMaster) => quarterHouse(danceMaster, Directions.RIGHT),
@@ -1515,6 +1567,10 @@ class DanceMaster {
      * @returns {Promise<void>}
      */
     async runMove(move) {
+        if(mingling && move !== Moves.mingle) {
+            console.log('Stop mingling')
+            mingling = false
+        }
         try {
             await move(this)
         } catch (e) {
@@ -1732,12 +1788,13 @@ class DanceMaster {
 }
 
 let danceMaster;
-window.onload = () => {
+window.onload = async () => {
     danceMaster = new DanceMaster({
         formation: Formations.EIGHT_HAND_SQUARE
     });
 
-    danceMaster.runMove(Moves.randomizeDancerOffsets)
+    await danceMaster.runMove(Moves.randomizeDancerOffsets)
+    await danceMaster.runMove(Moves.mingle)
 
     // danceMaster.addMove(Moves.facePartner)
     // danceMaster.addMove(Moves.swingPartner)
