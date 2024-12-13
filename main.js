@@ -1589,7 +1589,7 @@ class DanceMaster {
 
         const label = document.createElement('div')
         label.classList.add('label')
-        label.innerHTML = name
+        label.innerHTML = `${name} <br/> ${role}`
         dancerElem.appendChild(label)
 
         const arrow = document.createElement('div')
