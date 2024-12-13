@@ -1245,9 +1245,14 @@ const facePosition = (danceMaster, dancer, targetPositionName) => {
         return
     }
 
+    // get offsets from dancer's elem transform
+    const transform = dancer.elem.style.transform
+    const transformX = transform.match(/translateX\((.+)px\) /)[1]
+    const transformY = transform.match(/translateY\((.+)px\)/)[1]
+
     const currentOffset = {
-        x: dancer.currentOffset.x,
-        y: dancer.currentOffset.y
+        x: parseInt(transformX),
+        y: parseInt(transformY)
     }
 
     const currentPosition = {
@@ -1260,6 +1265,17 @@ const facePosition = (danceMaster, dancer, targetPositionName) => {
     const rotationAndAngleRight = calculateRotationFromPositions(danceMaster.state, currentPosition, targetPosition, Directions.RIGHT)
     const rotationAndAngleLeft = calculateRotationFromPositions(danceMaster.state, currentPosition, targetPosition, Directions.LEFT)
     const shortestRotation = findShortestRotation({rotation: rotationAndAngleRight}, dancer, {rotation: rotationAndAngleLeft})
+
+    if (dancer.role === Positions.FIRST_TOP_LEAD) {
+        console.log('transformX', transformX)
+        console.log('transformY', transformY)
+        console.log('currentOffset', currentOffset)
+        console.log('currentPosition', currentPosition)
+        console.log('targetPosition', targetPosition)
+        console.log('rotationAndAngleRight', rotationAndAngleRight)
+        console.log('rotationAndAngleLeft', rotationAndAngleLeft)
+        console.log('shortestRotation', shortestRotation)
+    }
 
     const timeline = anime.timeline({
         targets: dancer.arrowId,
