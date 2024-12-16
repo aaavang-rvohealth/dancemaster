@@ -1417,6 +1417,7 @@ function isElementOutsideViewport(element) {
 
 let minglingTimelinesPromise
 const mingle = async (danceMaster) => {
+    updateHeader('Mingling')
     mingling = true
     while(mingling) {
         const timelines = []
@@ -1613,7 +1614,7 @@ class DanceMaster {
     async runMove(move) {
         if(mingling && move !== Moves.mingle) {
             mingling = false
-            updateHeader('Stopped Mingling')
+            updateHeader('Stop Mingling')
             await minglingTimelinesPromise
             await goHome(this)
         }
