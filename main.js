@@ -31,6 +31,7 @@ const tick = () => {
 const Formations = {
     EIGHT_HAND_SQUARE: 'EIGHT_HAND_SQUARE',
     TWO_FACING_TWO: 'TWO_FACING_TWO',
+    // SOLO: 'SOLO',
     // THREE_FACING_THREE: 'THREE_FACING_THREE',
     // FOUR_FACING_FOUR: 'FOUR_FACING_FOUR',
     // CIRCLE: 'CIRCLE',
@@ -138,7 +139,10 @@ const Groups = {
         [Positions.BOTTOM_LEFT]: 'BOTTOM',
         [Positions.BOTTOM_CENTER]: 'BOTTOM',
         [Positions.BOTTOM_RIGHT]: 'BOTTOM',
-    }
+    },
+    // [Formations.SOLO]: {
+    //     [Positions.FIRST_TOP_LEAD]: 'TOP',
+    // }
 }
 
 /**
@@ -231,6 +235,13 @@ const calcPositions = (width, height) => {
                 rotation: 180
             },
         },
+        // [Formations.SOLO]: {
+        //     [Positions.FIRST_TOP_LEAD]: {
+        //         x: center.x,
+        //         y: center.y + 50,
+        //         rotation: 180
+        //     }
+        // }
     }
 }
 
@@ -577,6 +588,7 @@ const faceCenter = async (danceMaster, tick = false, overrideTurnDirection) => {
     const state = danceMaster.state
     const timelines = [];
     switch (state.formation) {
+        // case Formations.SOLO:
         case Formations.TWO_FACING_TWO:
         case Formations.EIGHT_HAND_SQUARE:
             for (const dancer of Object.values(state.dancers)) {
@@ -1316,6 +1328,7 @@ const goToPosition = (danceMaster, dancer, targetPositionName) => {
 }
 
 const goHome = async (danceMaster) => {
+    updateHeader('Go Home')
     let timelines = []
     for(const dancer of Object.values(danceMaster.state.dancers)) {
         timelines.push(facePosition(danceMaster, dancer, dancer.role))
@@ -1327,6 +1340,10 @@ const goHome = async (danceMaster) => {
         timelines.push(goToPosition(danceMaster, dancer, dancer.role))
     }
     await Promise.all(timelines)
+    for(const dancer of Object.values(danceMaster.state.dancers)) {
+        danceMaster.normalizeDancerRotations()
+    }
+
     await faceCenter(danceMaster, false)
     count = 0
     clearHeader()
@@ -1404,6 +1421,7 @@ const mingle = async (danceMaster) => {
     while(mingling) {
         const timelines = []
         for(const dancer of Object.values(danceMaster.state.dancers)) {
+            dancer.currentNamedPosition = Positions.OUT_OF_POSITION
             const currentOffsets = getDancerTransformValues(dancer)
             const currentPosition = {
                 x: currentOffsets.x + positions[danceMaster.state.formation][dancer.role].x,
@@ -1552,6 +1570,9 @@ class DanceMaster {
                 this.createDancer('green', options.formation, Positions.SECOND_TOP_LEAD);
                 this.createDancer('yellow', options.formation, Positions.SECOND_TOP_FOLLOW);
                 break;
+            // case Formations.SOLO:
+            //     this.createDancer('red', options.formation, Positions.FIRST_TOP_LEAD)
+            //     break;
             default:
                 throw new Error("invalid formation")
         }
@@ -1592,6 +1613,7 @@ class DanceMaster {
     async runMove(move) {
         if(mingling && move !== Moves.mingle) {
             mingling = false
+            updateHeader('Stopped Mingling')
             await minglingTimelinesPromise
             await goHome(this)
         }
@@ -1615,6 +1637,9 @@ class DanceMaster {
         updateHeader('Done')
     }
 
+    /**
+     * Normalize all dancer rotations to be between 0 and 360.  This helps prevent rapid unwinding when turning around.
+     */
     normalizeDancerRotations() {
         for (const dancer of Object.values(this.state.dancers)) {
             const normalizedRotation = normalizeRotation(dancer.arrowElem);
@@ -1803,6 +1828,8 @@ class DanceMaster {
                         break;
                 }
                 break
+            // case Formations.SOLO:
+            //     return Positions.FIRST_TOP_LEAD
             default:
                 throw new Error("invalid formation")
         }
