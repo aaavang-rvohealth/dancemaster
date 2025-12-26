@@ -282,6 +282,95 @@ const getCurrentOffset = (formation, dancer) => {
 /**
  * Move to fast sevens with partner
  * @param danceMaster
+ * @param numBeats
+ * @returns {Promise<Awaited<unknown>[]>}
+ */
+const switchWithPartner = async (danceMaster, numBeats = 4) => {
+    const state = danceMaster.state
+    updateHeader('Switch With Partner')
+    const timelines = [];
+    switch (state.formation) {
+        case Formations.TWO_FACING_TWO:
+        case Formations.EIGHT_HAND_SQUARE:
+            // group dancers by group
+            const groups = Object.values(state.dancers).reduce((acc, dancer) => {
+                const group = FormationGroups[state.formation][dancer.currentNamedPosition]
+                if (!acc[group]) {
+                    acc[group] = []
+                }
+                acc[dancer.group].push(dancer)
+                return acc
+            }, {})
+
+            Object.values(groups).forEach(group => {
+                const [dancer1, dancer2] = group
+                const dancer1Timeline = anime.timeline({
+                    duration: numBeats * BEATS,
+                    easing: 'linear',
+                    autoplay: false
+                })
+                const dancer2Timeline = anime.timeline({
+                    duration: numBeats * BEATS,
+                    easing: 'linear',
+                    autoplay: false
+                })
+
+                let orientation
+                if (dancer1.position.x === dancer2.position.x) {
+                    // y values are different, so they are sides
+                    orientation = Orientations.SIDES
+                } else if (dancer1.position.y === dancer2.position.y) {
+                    // x values are different, so they are tops
+                    orientation = Orientations.TOPS
+                } else {
+                    orientation = Orientations.OTHER
+                }
+
+                const dancer1DesiredPosition = positions[state.formation][danceMaster.getPositionNameFromRelationship(dancer1.currentNamedPosition, Relationships.PARTNER)]
+                const dancer2DesiredPosition = positions[state.formation][danceMaster.getPositionNameFromRelationship(dancer2.currentNamedPosition, Relationships.PARTNER)]
+                const dancer1StartingPosition = positions[state.formation][dancer1.role]
+                const dancer2StartingPosition = positions[state.formation][dancer2.role]
+
+                dancer1Timeline.add({
+                    // switch with partner
+                    targets: dancer1.targetId,
+                    translateX: orientation === Orientations.TOPS || orientation === Orientations.OTHER ? dancer1DesiredPosition.x - dancer1StartingPosition.x : 0,
+                    translateY: orientation === Orientations.SIDES || orientation === Orientations.OTHER ? dancer1DesiredPosition.y - dancer1StartingPosition.y : 0,
+                    complete: () => {
+                        const tempNamedPosition = dancer1.currentNamedPosition
+                        const tempPosition = dancer1.position
+                        dancer1.currentNamedPosition = dancer2.currentNamedPosition
+                        dancer1.position = dancer2.position
+                        dancer2.currentNamedPosition = tempNamedPosition
+                        dancer2.position = tempPosition
+                    }
+                })
+
+                dancer2Timeline.add({
+                    // switch with partner
+                    targets: dancer2.targetId,
+                    translateX: orientation === Orientations.TOPS || orientation === Orientations.OTHER ? dancer2DesiredPosition.x - dancer2StartingPosition.x : 0,
+                    translateY: orientation === Orientations.SIDES || orientation === Orientations.OTHER ? dancer2DesiredPosition.y - dancer2StartingPosition.y : 0
+                })
+
+                timelines.push(dancer1Timeline)
+                timelines.push(dancer2Timeline)
+
+            })
+            break;
+        default:
+            throw new Error("invalid formation")
+    }
+    const tickerTimeline = makeTickerTimeline(numBeats);
+    timelines.push(tickerTimeline)
+
+    timelines.forEach(timeline => timeline.play())
+    return Promise.all(timelines.map(timeline => timeline.finished))
+}
+
+/**
+ * Move to fast sevens with partner
+ * @param danceMaster
  * @returns {Promise<Awaited<unknown>[]>}
  */
 const fastSevensWithPartner = async (danceMaster) => {
@@ -749,14 +838,12 @@ const clapTwice = async (danceMaster) => {
 
         dancerTimeline.add({
             targets: dancer.targetId,
-            scale: 1,
             direction: 'alternate',
             easing: 'easeOutElastic(1, .6)'
         })
 
         dancerTimeline.add({
             targets: dancer.targetId,
-            scale: 1,
             direction: 'alternate',
             easing: 'easeOutElastic(1, .6)'
         })
@@ -777,14 +864,12 @@ const clapTwice = async (danceMaster) => {
 
         dancerTimeline.add({
             targets: dancer.targetId,
-            scale: 1,
             direction: 'alternate',
             easing: 'easeOutElastic(1, .6)'
         })
 
         dancerTimeline.add({
             targets: dancer.targetId,
-            scale: 1,
             direction: 'alternate',
             easing: 'easeOutElastic(1, .6)'
         })
@@ -1622,6 +1707,8 @@ const Moves = {
     twoThreesToTheLeftEndFacingPartner: (danceMaster) => Promise.all([twoThrees(danceMaster, Directions.LEFT), facePartner(danceMaster)]),
     advanceAndRetire,
     fastSevensWithPartner,
+    switchWithPartner,
+    fastSwitchWithPartner: (danceMaster) => switchWithPartner(danceMaster, 2),
     quarterCircle,
     quarterCircleLeft: (danceMaster) => quarterCircle(danceMaster, Directions.LEFT),
     quarterCircleRight: (danceMaster) => quarterCircle(danceMaster, Directions.RIGHT),
@@ -2061,20 +2148,24 @@ const threeTunes = new FigureDance("Three Tunes")
         new MoveSet()
         .withMoves([
             Moves.followsFastInnerCircleLeft,
-            Moves.clapTwice
+            Moves.clapTwice,
+            Moves.fastSwitchWithPartner,
+            Moves.switchWithPartner,
+            Moves.leadsFastInnerCircleLeft,
+            Moves.clapTwice,
+            Moves.fastSwitchWithPartner,
+            Moves.switchWithPartner,
         ]))
     .withSteps((figureDance) => {
         return [
-            // figureDance.figures["Right Right/Left"],
+            figureDance.figures["Right Right/Left"],
             figureDance.bodies["Rings"]
         ]
     })
 
 const doThreeTunes = async () => {
     mingling = false
-    if (danceMaster.state.formation !== Formations.EIGHT_HAND_SQUARE) {
-        resetDanceMaster(Formations.EIGHT_HAND_SQUARE)
-    }
+    resetDanceMaster(Formations.EIGHT_HAND_SQUARE)
     await goHome(danceMaster)
     await threeTunes.do(danceMaster)
 }
