@@ -298,7 +298,7 @@ const switchWithPartner = async (danceMaster, numBeats = 4) => {
                 if (!acc[group]) {
                     acc[group] = []
                 }
-                acc[dancer.group].push(dancer)
+                acc[group].push(dancer)
                 return acc
             }, {})
 
@@ -315,30 +315,19 @@ const switchWithPartner = async (danceMaster, numBeats = 4) => {
                     autoplay: false
                 })
 
-                let orientation
-                if (dancer1.position.x === dancer2.position.x) {
-                    // y values are different, so they are sides
-                    orientation = Orientations.SIDES
-                } else if (dancer1.position.y === dancer2.position.y) {
-                    // x values are different, so they are tops
-                    orientation = Orientations.TOPS
-                } else {
-                    orientation = Orientations.OTHER
-                }
-
-                const dancer1DesiredPosition = positions[state.formation][danceMaster.getPositionNameFromRelationship(dancer1.currentNamedPosition, Relationships.PARTNER)]
-                const dancer2DesiredPosition = positions[state.formation][danceMaster.getPositionNameFromRelationship(dancer2.currentNamedPosition, Relationships.PARTNER)]
+                const dancer1DesiredPosition = positions[state.formation][dancer2.currentNamedPosition]
+                const dancer2DesiredPosition = positions[state.formation][dancer1.currentNamedPosition]
                 const dancer1StartingPosition = positions[state.formation][dancer1.role]
                 const dancer2StartingPosition = positions[state.formation][dancer2.role]
 
                 dancer1Timeline.add({
                     // switch with partner
                     targets: dancer1.targetId,
-                    translateX: orientation === Orientations.TOPS || orientation === Orientations.OTHER ? dancer1DesiredPosition.x - dancer1StartingPosition.x : 0,
-                    translateY: orientation === Orientations.SIDES || orientation === Orientations.OTHER ? dancer1DesiredPosition.y - dancer1StartingPosition.y : 0,
+                    translateX: dancer1DesiredPosition.x - dancer1StartingPosition.x,
+                    translateY: dancer1DesiredPosition.y - dancer1StartingPosition.y,
                     complete: () => {
                         const tempNamedPosition = dancer1.currentNamedPosition
-                        const tempPosition = dancer1.position
+                        const tempPosition = {...dancer1.position}
                         dancer1.currentNamedPosition = dancer2.currentNamedPosition
                         dancer1.position = dancer2.position
                         dancer2.currentNamedPosition = tempNamedPosition
@@ -349,8 +338,8 @@ const switchWithPartner = async (danceMaster, numBeats = 4) => {
                 dancer2Timeline.add({
                     // switch with partner
                     targets: dancer2.targetId,
-                    translateX: orientation === Orientations.TOPS || orientation === Orientations.OTHER ? dancer2DesiredPosition.x - dancer2StartingPosition.x : 0,
-                    translateY: orientation === Orientations.SIDES || orientation === Orientations.OTHER ? dancer2DesiredPosition.y - dancer2StartingPosition.y : 0
+                    translateX: dancer2DesiredPosition.x - dancer2StartingPosition.x,
+                    translateY: dancer2DesiredPosition.y - dancer2StartingPosition.y
                 })
 
                 timelines.push(dancer1Timeline)
@@ -374,83 +363,12 @@ const switchWithPartner = async (danceMaster, numBeats = 4) => {
  * @returns {Promise<Awaited<unknown>[]>}
  */
 const fastSevensWithPartner = async (danceMaster) => {
-    const state = danceMaster.state
     updateHeader('Fast Sevens')
-    const timelines = [];
-    switch (state.formation) {
-        case Formations.TWO_FACING_TWO:
-        case Formations.EIGHT_HAND_SQUARE:
-            // group dancers by group
-            const groups = Object.values(state.dancers).reduce((acc, dancer) => {
-                const group = FormationGroups[state.formation][dancer.currentNamedPosition]
-                if (!acc[group]) {
-                    acc[group] = []
-                }
-                acc[dancer.group].push(dancer)
-                return acc
-            }, {})
+    freezeHeader = true
+    await switchWithPartner(danceMaster)
+    await switchWithPartner(danceMaster)
+    freezeHeader = false
 
-            Object.values(groups).forEach(group => {
-                const [dancer1, dancer2] = group
-                const dancer1Timeline = anime.timeline({
-                    duration: 4 * BEATS,
-                    easing: 'linear',
-                    autoplay: false
-                })
-                const dancer2Timeline = anime.timeline({
-                    duration: 4 * BEATS,
-                    easing: 'linear',
-                    autoplay: false
-                })
-
-                let orientation
-                if (dancer1.position.x === dancer2.position.x) {
-                    // y values are different, so they are sides
-                    orientation = Orientations.SIDES
-                } else if (dancer1.position.y === dancer2.position.y) {
-                    // x values are different, so they are tops
-                    orientation = Orientations.TOPS
-                } else {
-                    orientation = Orientations.OTHER
-                }
-
-                dancer1Timeline.add({
-                    // switch with partner
-                    targets: dancer1.targetId,
-                    translateX: orientation === Orientations.TOPS || orientation === Orientations.OTHER ? dancer2.position.x - dancer1.position.x : 0,
-                    translateY: orientation === Orientations.SIDES || orientation === Orientations.OTHER ? dancer2.position.y - dancer1.position.y : 0
-                }).add({
-                    // go back
-                    targets: dancer1.targetId,
-                    translateX: 0,
-                    translateY: 0
-                })
-
-                dancer2Timeline.add({
-                    // switch with partner
-                    targets: dancer2.targetId,
-                    translateX: orientation === Orientations.TOPS || orientation === Orientations.OTHER ? dancer1.position.x - dancer2.position.x : 0,
-                    translateY: orientation === Orientations.SIDES || orientation === Orientations.OTHER ? dancer1.position.y - dancer2.position.y : 0
-                }).add({
-                    // go back
-                    targets: dancer2.targetId,
-                    translateX: 0,
-                    translateY: 0
-                })
-
-                timelines.push(dancer1Timeline)
-                timelines.push(dancer2Timeline)
-
-            })
-            break;
-        default:
-            throw new Error("invalid formation")
-    }
-    const tickerTimeline = makeTickerTimeline(8);
-    timelines.push(tickerTimeline)
-
-    timelines.forEach(timeline => timeline.play())
-    return Promise.all(timelines.map(timeline => timeline.finished))
 }
 
 /**
