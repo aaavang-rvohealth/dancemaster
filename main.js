@@ -32,7 +32,7 @@ const Formations = {
     EIGHT_HAND_SQUARE: 'EIGHT_HAND_SQUARE',
     TWO_FACING_TWO: 'TWO_FACING_TWO',
     // SOLO: 'SOLO',
-    // THREE_FACING_THREE: 'THREE_FACING_THREE',
+    THREE_FACING_THREE: 'THREE_FACING_THREE',
     // FOUR_FACING_FOUR: 'FOUR_FACING_FOUR',
     // CIRCLE: 'CIRCLE',
 }
@@ -111,11 +111,28 @@ const DancerLayouts = {
     ],
 }
 
+const Group = {
+    TOP: 'TOP',
+    BOTTOM: 'BOTTOM',
+    FIRST_TOP: '1st TOP',
+    SECOND_TOP: '2nd TOP',
+    FIRST_SIDE: '1st SIDE',
+    SECOND_SIDE: '2nd SIDE'
+}
+
+const isTopGroup = (group) => {
+    return group === Group.TOP || group === Group.FIRST_TOP || group === Group.SECOND_TOP
+}
+
+const isSideGroup = (group) => {
+    return group === Group.FIRST_SIDE || group === Group.SECOND_SIDE;
+}
+
 /**
- * Helper enum for groups
- * @typedef {keyof Groups} Group
+ * Helper enum for formation groups
+ * @typedef {keyof FormationGroups} Group
  */
-const Groups = {
+const FormationGroups = {
     [Formations.EIGHT_HAND_SQUARE]: {
         [Positions.FIRST_TOP_LEAD]: 'TOP',
         [Positions.FIRST_TOP_FOLLOW]: 'TOP',
@@ -167,7 +184,6 @@ const calcPositions = (width, height) => {
         x: width / 2,
         y: height / 2 + 100
     }
-
 
     return {
         center,
@@ -277,7 +293,7 @@ const fastSevensWithPartner = async (danceMaster) => {
         case Formations.EIGHT_HAND_SQUARE:
             // group dancers by group
             const groups = Object.values(state.dancers).reduce((acc, dancer) => {
-                const group = Groups[state.formation][dancer.currentNamedPosition]
+                const group = FormationGroups[state.formation][dancer.currentNamedPosition]
                 if (!acc[group]) {
                     acc[group] = []
                 }
@@ -655,7 +671,7 @@ function makeTickerTimeline(numOfBeats) {
  */
 const getInnerCirclePosition = (formation, position) => {
     const normalPosition = positions[formation][position]
-    const group = Groups[formation][position]
+    const group = FormationGroups[formation][position]
     const offset = 100;
     switch (group) {
         case 'TOP':
@@ -681,6 +697,104 @@ const getInnerCirclePosition = (formation, position) => {
     }
 }
 
+const sound = new Audio('clap.mp3');
+sound.preload = 'auto'
+const clapTwice = async (danceMaster) => {
+    updateHeader('Clap Twice')
+    const state = danceMaster.state
+    const timelines = []
+
+    const tickerTimeline = makeTickerTimeline(1);
+    timelines.push(tickerTimeline)
+
+    const clapTimeline = anime.timeline({
+        duration: 1 * BEATS,
+        autoplay: false
+    })
+
+    clapTimeline.add({
+        begin: () => {
+            sound.play()
+        }
+    })
+
+    clapTimeline.add({
+        begin: () => {
+            sound.play()
+        }
+    })
+
+    timelines.push(clapTimeline)
+
+    for (const dancer of Object.values(state.dancers)) {
+        // scale element up and down
+        const dancerTimeline = anime.timeline({
+            duration: .25 * BEATS,
+            autoplay: false
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1.2,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1.2,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+
+        dancerTimeline.add({
+            targets: dancer.targetId,
+            scale: 1,
+            direction: 'alternate',
+            easing: 'easeOutElastic(1, .6)'
+        })
+        timelines.push(dancerTimeline)
+    }
+
+    timelines.forEach(timeline => timeline.play())
+    return Promise.all(timelines.map(timeline => timeline.finished))
+}
+
 /**
  * Helper move to make an inner circle and rotate a quarter position
  * @param danceMaster
@@ -689,7 +803,7 @@ const getInnerCirclePosition = (formation, position) => {
  * @param {boolean} endInRegularPosition - true if the dancers should end in their regular position, false if they should end in the opposite role position
  * @returns {Promise<void>}
  */
-const innerQuarterCircle = async (danceMaster, direction, leadsActive, endInRegularPosition) => {
+const innerQuarterCircle = async (danceMaster, direction, leadsActive, endInRegularPosition, numBeats = 4) => {
     updateHeader(`Inner Quarter Circle ${direction} - ${leadsActive ? 'Leads' : 'Follows'}`)
     const state = danceMaster.state
     const timelines = [];
@@ -709,7 +823,7 @@ const innerQuarterCircle = async (danceMaster, direction, leadsActive, endInRegu
 
                 const timeline = anime.timeline({
                     targets: dancer.targetId,
-                    duration: 4 * BEATS,
+                    duration: numBeats * BEATS,
                     easing: 'linear',
                     autoplay: false
                 })
@@ -739,7 +853,7 @@ const innerQuarterCircle = async (danceMaster, direction, leadsActive, endInRegu
                 timelines.push(timeline)
 
                 const arrowTimeline = anime.timeline({
-                    duration: 4 * BEATS,
+                    duration: numBeats * BEATS,
                     easing: 'linear',
                     autoplay: false
                 })
@@ -760,7 +874,7 @@ const innerQuarterCircle = async (danceMaster, direction, leadsActive, endInRegu
         default:
             throw new Error("invalid formation")
     }
-    const tickerTimeline = makeTickerTimeline(4);
+    const tickerTimeline = makeTickerTimeline(numBeats);
     timelines.push(tickerTimeline)
 
     timelines.forEach(timeline => timeline.play())
@@ -774,6 +888,7 @@ const innerQuarterCircle = async (danceMaster, direction, leadsActive, endInRegu
  * @returns {Promise<Awaited<unknown>[]>}
  */
 const quarterCircle = async (danceMaster, direction) => {
+    updateHeader("Quarter Circle " + direction)
     const state = danceMaster.state
     const timelines = [];
 
@@ -1150,7 +1265,7 @@ const quarterHouse = async (danceMaster, direction) => {
 
     // groups dancers
     const groups = Object.values(state.dancers).reduce((acc, dancer) => {
-        const group = Groups[state.formation][dancer.currentNamedPosition]
+        const group = FormationGroups[state.formation][dancer.currentNamedPosition]
         if (!acc[group]) {
             acc[group] = []
         }
@@ -1512,6 +1627,8 @@ const Moves = {
     quarterCircleRight: (danceMaster) => quarterCircle(danceMaster, Directions.RIGHT),
     circleLeftHalfway: (danceMaster) => circleHalfway(danceMaster, Directions.LEFT),
     circleRightHalfway: (danceMaster) => circleHalfway(danceMaster, Directions.RIGHT),
+    followsFastInnerCircleLeft: (danceMaster) => [1,2,3,4].reduce((promise, val) => {return promise.then(() => innerQuarterCircle(danceMaster, Directions.LEFT, false, val === 4, 2))}, Promise.resolve()),
+    leadsFastInnerCircleLeft: (danceMaster) => [1,2,3,4].reduce((promise, val) => {return promise.then(() => innerQuarterCircle(danceMaster, Directions.LEFT, true, val === 4, 2))}, Promise.resolve()),
     leadsInnerQuarterCircleRight: (danceMaster) => innerQuarterCircle(danceMaster, Directions.RIGHT, true, false),
     leadsInnerQuarterCircleLeft: (danceMaster) => innerQuarterCircle(danceMaster, Directions.LEFT, true, false),
     followsInnerQuarterCircleRight: (danceMaster) => innerQuarterCircle(danceMaster, Directions.RIGHT, false, false),
@@ -1520,12 +1637,70 @@ const Moves = {
     leadsInnerQuarterCircleLeftEndHome: (danceMaster) => innerQuarterCircle(danceMaster, Directions.LEFT, true, true),
     followsInnerQuarterCircleRightEndHome: (danceMaster) => innerQuarterCircle(danceMaster, Directions.RIGHT, false, true),
     followsInnerQuarterCircleLeftEndHome: (danceMaster) => innerQuarterCircle(danceMaster, Directions.LEFT, false, true),
+    clapTwice: clapTwice
 }
 
 const generateRandomName = () => {
     const names = ["Alex", "Davin", "Emmalee", "Justin", "Grace", "Danielle", "Sam", "Katie", "Paul", "Stephen", "Sharon", "Amy", "Ed", "Elaine", "Elvira", "Hailey", "Gaby", "Dawn", "Tim", "Liam", "Emma", "Noah", "Olivia", "Aiden", "Sophia", "Mason", "Isabella", "Lucas", "Mia", "Ethan", "Amelia", "James", "Harper", "Benjamin", "Evelyn", "Elijah", "Charlotte", "William", "Abigail", "Alexander", "Ella", "Henry", "Chloe", "Sebastian", "Madison", "Jackson", "Scarlett", "Mateo", "Aria", "Daniel", "Grace", "Matthew", "Zoe", "Joseph", "Riley", "David", "Lily", "Samuel", "Avery", "David", "Victoria", "John", "Camila", "Gabriel", "Penelope", "Carter", "Layla", "Owen", "Mila", "Wyatt", "Ellie", "Jack"]
 
     return names[Math.floor(Math.random() * names.length)]
+}
+
+class MoveSet {
+    constructor() {
+        this.moves = []
+    }
+
+    withMove(move) {
+        this.moves.push(move)
+        return this
+    }
+
+    withMoves(moves) {
+        this.moves.push(...moves)
+        return this
+    }
+
+    async do(danceMaster) {
+        return this.moves.reduce((promise, move) => {
+            return promise.then(() => move(danceMaster))
+        }, Promise.resolve())
+    }
+}
+
+class FigureDance {
+    constructor(name) {
+        this.name = name
+        this.figures = {}
+        this.bodies = {}
+        this.steps = (figureDance) => {
+            console.log("No steps defined")
+            return []
+        }
+    }
+
+    withBody(name, body) {
+        this.bodies[name] = body
+        return this
+    }
+
+    withFigure(name, moveSet) {
+        this.figures[name] = moveSet
+        return this
+    }
+
+    withSteps(steps) {
+        this.steps = steps
+        return this
+    }
+
+    async do(danceMaster) {
+        const steps = this.steps(this);
+        for (const step of steps) {
+            await step.do(danceMaster)
+            danceMaster.normalizeDancerRotations();
+        }
+    }
 }
 
 /**
@@ -1725,7 +1900,7 @@ class DanceMaster {
             arrowElem: arrow,
             position: positions[formation][role],
             currentNamedPosition: role,
-            group: Groups[formation][role],
+            group: FormationGroups[formation][role],
             currentOffset: {
                 x: 0,
                 y: 0,
@@ -1868,36 +2043,72 @@ const resetDanceMaster = (formation) => {
     });
 }
 
+const threeTunes = new FigureDance("Three Tunes")
+    .withFigure("Right Right/Left",
+        new MoveSet()
+        .withMoves([
+            Moves.quarterCircleLeft,
+            Moves.twoThreesToTheLeft,
+            Moves.quarterCircleRight,
+            Moves.twoThreesToTheRight,
+            Moves.quarterCircleRight,
+            Moves.twoThreesToTheRight,
+            Moves.quarterCircleLeft,
+            Moves.twoThreesToTheLeft,
+        ]
+    ))
+    .withBody("Rings",
+        new MoveSet()
+        .withMoves([
+            Moves.followsFastInnerCircleLeft,
+            Moves.clapTwice
+        ]))
+    .withSteps((figureDance) => {
+        return [
+            // figureDance.figures["Right Right/Left"],
+            figureDance.bodies["Rings"]
+        ]
+    })
+
+const doThreeTunes = async () => {
+    mingling = false
+    if (danceMaster.state.formation !== Formations.EIGHT_HAND_SQUARE) {
+        resetDanceMaster(Formations.EIGHT_HAND_SQUARE)
+    }
+    await goHome(danceMaster)
+    await threeTunes.do(danceMaster)
+}
+
 const bonfireDance = async () => {
     mingling = false
     resetDanceMaster(Formations.EIGHT_HAND_SQUARE)
-    danceMaster.addMove(Moves.advanceAndRetire)
-    danceMaster.addMove(Moves.advanceAndRetire)
-    danceMaster.addMove(Moves.quarterCircleRight)
-    danceMaster.addMove(Moves.twoThreesToTheRight)
-    danceMaster.addMove(Moves.quarterCircleLeft)
-    danceMaster.addMove(Moves.twoThreesToTheLeft)
-    danceMaster.addMove(Moves.advanceAndRetire)
-    danceMaster.addMove(Moves.advanceAndRetire)
-    danceMaster.addMove(Moves.quarterCircleLeft);
-    danceMaster.addMove(Moves.twoThreesToTheLeft);
-    danceMaster.addMove(Moves.quarterCircleRight)
-    danceMaster.addMove(Moves.twoThreesToTheRightEndFacingPartner);
-    danceMaster.addMove(Moves.sidestepRight);
-    danceMaster.addMove(Moves.turnPartnerHalfwayByTheRight);
-    danceMaster.addMove(Moves.turnPartnerHalfwayByTheLeft);
-    danceMaster.addMove(Moves.sidestepLeft);
-    danceMaster.addMove(Moves.turnPartnerHalfwayByTheLeft);
-    danceMaster.addMove(Moves.turnPartnerHalfwayByTheRight);
-    danceMaster.addMove(Moves.faceCenter);
-    danceMaster.addMove(Moves.followsInnerQuarterCircleRight);
-    danceMaster.addMove(Moves.followsTurnAround)
-    danceMaster.addMove(Moves.followsInnerQuarterCircleRightEndHome);
-    danceMaster.addMove(Moves.followsTurnAround)
-    danceMaster.addMove(Moves.leadsInnerQuarterCircleLeft);
-    danceMaster.addMove(Moves.leadsTurnAround)
-    danceMaster.addMove(Moves.leadsInnerQuarterCircleLeftEndHome);
-    danceMaster.addMove(Moves.leadsTurnAround)
+    danceMaster.withMove(Moves.advanceAndRetire)
+    danceMaster.withMove(Moves.advanceAndRetire)
+    danceMaster.withMove(Moves.quarterCircleRight)
+    danceMaster.withMove(Moves.twoThreesToTheRight)
+    danceMaster.withMove(Moves.quarterCircleLeft)
+    danceMaster.withMove(Moves.twoThreesToTheLeft)
+    danceMaster.withMove(Moves.advanceAndRetire)
+    danceMaster.withMove(Moves.advanceAndRetire)
+    danceMaster.withMove(Moves.quarterCircleLeft);
+    danceMaster.withMove(Moves.twoThreesToTheLeft);
+    danceMaster.withMove(Moves.quarterCircleRight)
+    danceMaster.withMove(Moves.twoThreesToTheRightEndFacingPartner);
+    danceMaster.withMove(Moves.sidestepRight);
+    danceMaster.withMove(Moves.turnPartnerHalfwayByTheRight);
+    danceMaster.withMove(Moves.turnPartnerHalfwayByTheLeft);
+    danceMaster.withMove(Moves.sidestepLeft);
+    danceMaster.withMove(Moves.turnPartnerHalfwayByTheLeft);
+    danceMaster.withMove(Moves.turnPartnerHalfwayByTheRight);
+    danceMaster.withMove(Moves.faceCenter);
+    danceMaster.withMove(Moves.followsInnerQuarterCircleRight);
+    danceMaster.withMove(Moves.followsTurnAround)
+    danceMaster.withMove(Moves.followsInnerQuarterCircleRightEndHome);
+    danceMaster.withMove(Moves.followsTurnAround)
+    danceMaster.withMove(Moves.leadsInnerQuarterCircleLeft);
+    danceMaster.withMove(Moves.leadsTurnAround)
+    danceMaster.withMove(Moves.leadsInnerQuarterCircleLeftEndHome);
+    danceMaster.withMove(Moves.leadsTurnAround)
 
     danceMaster.run();
 }
