@@ -704,7 +704,7 @@ const clapTwice = async (danceMaster) => {
     const state = danceMaster.state
     const timelines = []
 
-    const tickerTimeline = makeTickerTimeline(1);
+    const tickerTimeline = makeTickerTimeline(2);
     timelines.push(tickerTimeline)
 
     const clapTimeline = anime.timeline({
