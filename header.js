@@ -1,8 +1,16 @@
 export let count = 0
 let headerText
-export let freezeHeader = false
+let isHeaderFrozen = false
+export const freezeHeader = () => {
+    isHeaderFrozen = true
+}
+
+export const unfreezeHeader = () => {
+    isHeaderFrozen = false
+}
+
 export const updateHeader = (text) => {
-    if (text && !freezeHeader) {
+    if (text && !isHeaderFrozen) {
         headerText = text
     }
     const header = document.getElementById('header')

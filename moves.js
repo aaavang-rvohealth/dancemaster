@@ -1,4 +1,4 @@
-import {clearHeader, freezeHeader, resetCount, tick, updateHeader} from "./header.js";
+import {clearHeader, freezeHeader, resetCount, tick, unfreezeHeader, updateHeader} from "./header.js";
 import {BEATS, DancerLayouts, Directions, FormationGroups, Formations, Positions, Relationships} from "./enums.js";
 
 /**
@@ -189,10 +189,10 @@ export const switchWithPartner = async (danceMaster, numBeats = 4) => {
  */
 export const fastSevensWithPartner = async (danceMaster) => {
     updateHeader('Fast Sevens')
-    freezeHeader = true
+    freezeHeader()
     await switchWithPartner(danceMaster)
     await switchWithPartner(danceMaster)
-    freezeHeader = false
+    unfreezeHeader()
 
 }
 /**
@@ -625,6 +625,7 @@ export const clapTwice = async (danceMaster) => {
  * @param direction
  * @param {boolean} leadsActive - true if the leads are moving, false if the follows are moving
  * @param {boolean} endInRegularPosition - true if the dancers should end in their regular position, false if they should end in the opposite role position
+ * @param numBeats
  * @returns {Promise<void>}
  */
 export const innerQuarterCircle = async (danceMaster, direction, leadsActive, endInRegularPosition, numBeats = 4) => {
@@ -1068,12 +1069,12 @@ const turnAround = async (danceMaster, activeRoles) => {
  */
 export const swingPartner = async (danceMaster) => {
     updateHeader('Swing Partner')
-    freezeHeader = true
+    freezeHeader()
     await turnPartnerHalfway(danceMaster, Directions.RIGHT)
     await turnPartnerHalfway(danceMaster, Directions.RIGHT)
     await turnPartnerHalfway(danceMaster, Directions.RIGHT)
     await turnPartnerHalfway(danceMaster, Directions.RIGHT)
-    freezeHeader = false
+    unfreezeHeader()
 }
 
 export const quarterHouse = async (danceMaster, direction) => {
